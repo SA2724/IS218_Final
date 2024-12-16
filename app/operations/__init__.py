@@ -30,6 +30,9 @@ def add(a: Number, b: Number) -> Number:
     # Perform addition of a and b
     result = a + b
     return result
+def gen_add_prompt(a: Number, b: Number) -> str:
+    
+    return f"add {a} and {b}"
 
 def subtract(a: Number, b: Number) -> Number:
     """
@@ -51,6 +54,8 @@ def subtract(a: Number, b: Number) -> Number:
     # Perform subtraction of b from a
     result = a - b
     return result
+def gen_substraction_prompt(a: Number, b: Number) -> str:
+    return f"subtract {a} and {b}" 
 
 def multiply(a: Number, b: Number) -> Number:
     """
@@ -72,6 +77,9 @@ def multiply(a: Number, b: Number) -> Number:
     # Perform multiplication of a and b
     result = a * b
     return result
+def gen_multiply_prompt(a: Number, b: Number) -> str:
+
+    return f"multiply {a} and {b}"
 
 def divide(a: Number, b: Number) -> float:
     """
@@ -105,6 +113,9 @@ def divide(a: Number, b: Number) -> float:
     # Perform division of a by b and return the result as a float
     result = a / b
     return result
+def gen_division_prompt(a: Number, b: Number) -> str:
+    
+    return f"Divide {a} by {b}"
 
 def power(a: Number, b: Number) -> Number:
     """
@@ -126,11 +137,8 @@ def power(a: Number, b: Number) -> Number:
     # Perform multiplication of a and b
     result = a ** b
     return result
-
-
-
-
-
+def gen_power_prompt(a:Number, b: Number) -> str:
+    return f"Power of {a} by {b}"
 
 def modulus(a: Number, b: Number) -> float:
     """
@@ -164,3 +172,5 @@ def modulus(a: Number, b: Number) -> float:
     # Perform division of a by b and return the result as a float
     result = a % b
     return result
+def gen_modulus_prompt(a:Number,b:Number) -> str:
+    return f"Modulus of {a} by {b}"
