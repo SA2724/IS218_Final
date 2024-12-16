@@ -25,7 +25,7 @@ services:
     container_name: postgres_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: Asqw12zx!@
       POSTGRES_DB: fastapi_db
     ports:
       - "5432:5432"
