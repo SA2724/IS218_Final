@@ -18,6 +18,8 @@ from app.calculation import (
     Subtraction,
     Multiplication,
     Division,
+    Power, 
+    Modulus 
 )
 from app.schema import UserData
 from app.settings import Settings
