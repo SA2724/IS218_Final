@@ -152,3 +152,28 @@ class Division(Calculation):
                 raise ValueError("Cannot divide by zero.")
             result /= value
         return result
+# Subclass for Power
+class Power(Calculation):
+    __mapper_args__ = {
+        'polymorphic_identity': 'power',
+    }
+
+    def get_result(self) -> float:
+        if not isinstance(self.inputs, list) or len(self.inputs) != 2:
+            raise ValueError("Inputs must be a list with exactly two numbers for power operation.")
+        base, exponent = self.inputs
+        return base ** exponent
+
+# Subclass for Modulus
+class Modulus(Calculation):
+    __mapper_args__ = {
+        'polymorphic_identity': 'modulus',
+    }
+
+    def get_result(self) -> float:
+        if not isinstance(self.inputs, list) or len(self.inputs) != 2:
+            raise ValueError("Inputs must be a list with exactly two numbers for modulus operation.")
+        dividend, divisor = self.inputs
+        if divisor == 0:
+            raise ValueError("Cannot perform modulus by zero!")
+        return dividend % divisor
