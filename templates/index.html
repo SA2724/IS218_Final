@@ -8,110 +8,93 @@
             font-family: Arial, sans-serif;
             background-color: #f2f2f2;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            padding-top: 50px;
+        }
+        h1 {
+            color: #333;
         }
         .calculator {
             background-color: #fff;
-            padding: 20px 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        .calculator h1 {
-            text-align: center;
+        .calculator form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
             margin-bottom: 20px;
         }
-        .calculator input {
-            width: 100%;
+        .calculator input[type="number"] {
             padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .calculator .buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: space-between;
-        }
-        .calculator button {
-            flex: 1 1 45%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: #007BFF;
-            color: #fff;
-            cursor: pointer;
             font-size: 16px;
         }
-        .calculator button:hover {
-            background-color: #0056b3;
+        .calculator button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            transition: background-color 0.3s;
         }
-        .calculator .result {
+        .calculator button:hover {
+            background-color: #45a049;
+        }
+        .result {
             margin-top: 20px;
-            text-align: center;
             font-size: 18px;
-            min-height: 24px;
+            color: #555;
         }
     </style>
 </head>
 <body>
-
+    <h1>FastAPI Calculator</h1>
     <div class="calculator">
-        <h1>Calculator</h1>
-        <input type="number" id="number1" placeholder="Enter first number" required>
-        <input type="number" id="number2" placeholder="Enter second number" required>
-        <div class="buttons">
-            <button onclick="performOperation('add')">Add (+)</button>
-            <button onclick="performOperation('subtract')">Subtract (-)</button>
-            <button onclick="performOperation('multiply')">Multiply (*)</button>
-            <button onclick="performOperation('divide')">Divide (/)</button>
-            <button onclick="performOperation('power')">Power (**)</button>
-            <button onclick="performOperation('modulus')">Modulus (%)</button>
-        </div>
-        <div class="result" id="result"></div>
+        <!-- Existing Forms -->
+        <form action="/calculate/addition" method="post">
+            <input type="number" name="a" placeholder="Enter first number" required>
+            <input type="number" name="b" placeholder="Enter second number" required>
+            <button type="submit">Add (+)</button>
+        </form>
+        <form action="/calculate/subtraction" method="post">
+            <input type="number" name="a" placeholder="Enter first number" required>
+            <input type="number" name="b" placeholder="Enter second number" required>
+            <button type="submit">Subtract (-)</button>
+        </form>
+        <form action="/calculate/multiplication" method="post">
+            <input type="number" name="a" placeholder="Enter first number" required>
+            <input type="number" name="b" placeholder="Enter second number" required>
+            <button type="submit">Multiply (×)</button>
+        </form>
+        <form action="/calculate/division" method="post">
+            <input type="number" name="a" placeholder="Enter dividend" required>
+            <input type="number" name="b" placeholder="Enter divisor" required>
+            <button type="submit">Divide (÷)</button>
+        </form>
+        
+        <!-- New Form for Power Operation -->
+        <form action="/calculate/power" method="post">
+            <input type="number" name="a" placeholder="Enter base number" required>
+            <input type="number" name="b" placeholder="Enter exponent" required>
+            <button type="submit">Power (^) </button>
+        </form>
+        
+        <!-- New Form for Modulus Operation -->
+        <form action="/calculate/modulus" method="post">
+            <input type="number" name="a" placeholder="Enter dividend" required>
+            <input type="number" name="b" placeholder="Enter divisor" required>
+            <button type="submit">Modulus (%)</button>
+        </form>
     </div>
-
-    <script>
-        async function performOperation(operation) {
-            const num1 = parseFloat(document.getElementById('number1').value);
-            const num2 = parseFloat(document.getElementById('number2').value);
-            const resultDiv = document.getElementById('result');
-
-            if (isNaN(num1) || isNaN(num2)) {
-                resultDiv.innerHTML = "<span style='color: red;'>Please enter valid numbers.</span>";
-                return;
-            }
-
-            // Assuming you have a user_id to pass; replace 'your-user-uuid' with actual UUID
-            const userId = 'your-user-uuid'; // Replace with actual user ID logic if applicable
-
-            try {
-                const response = await fetch(`/calculate/${operation}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        inputs: [num1, num2]
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    resultDiv.innerHTML = `<strong>Result:</strong> ${data.result}`;
-                } else {
-                    resultDiv.innerHTML = `<span style='color: red;'>Error: ${data.detail}</span>`;
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                resultDiv.innerHTML = "<span style='color: red;'>An unexpected error occurred.</span>";
-            }
-        }
-    </script>
-
+    <!-- Display Result Here -->
+    <div class="result">
+        <!-- You can populate this section with the result from the server -->
+        <!-- Example: -->
+        <!-- <p>Result: 8</p> -->
+    </div>
 </body>
 </html>
