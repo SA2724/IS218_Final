@@ -198,6 +198,26 @@
             - "Divide": The text displayed on the button.
         -->
         
+        <!-- New Button for Power Operation -->
+        <button onclick="calculate('power')">Power (^)</button>
+        <!--
+            <button> Element: Power Button
+            
+            - onclick="calculate('power')": Sets up an event handler that calls the JavaScript function "calculate"
+              with the argument 'power' when the button is clicked.
+            - "Power (^)": The text displayed on the button, indicating the operation symbol.
+        -->
+        
+        <!-- New Button for Modulus Operation -->
+        <button onclick="calculate('modulus')">Modulus (%)</button>
+        <!--
+            <button> Element: Modulus Button
+            
+            - onclick="calculate('modulus')": Sets up an event handler that calls the JavaScript function "calculate"
+              with the argument 'modulus' when the button is clicked.
+            - "Modulus (%)": The text displayed on the button, indicating the operation symbol.
+        -->
+        
         <div class="result" id="result"></div>
         <!--
             <div> Element: Result Display
@@ -228,7 +248,7 @@
                 and updates the result display based on the server's response.
                 
                 Parameters:
-                - operation (string): The arithmetic operation to perform ('add', 'subtract', 'multiply', 'divide').
+                - operation (string): The arithmetic operation to perform ('add', 'subtract', 'multiply', 'divide', 'power', 'modulus').
                 
                 Steps:
                 1. Retrieve the values from the input fields with IDs 'a' and 'b'.
@@ -255,7 +275,7 @@
                     Sending the POST Request
                     
                     - fetch('/' + operation, {...}): Sends a POST request to the server at the path corresponding
-                      to the operation (e.g., '/add', '/subtract').
+                      to the operation (e.g., '/add', '/subtract', '/power', '/modulus').
                       
                     - method: 'POST': Specifies the HTTP method as POST, indicating that data is being sent to the server.
                     
@@ -265,7 +285,7 @@
                     - body: JSON.stringify({ a: a, b: b }): Converts the JavaScript object { a: a, b: b } into a JSON string
                       to be sent in the request body.
                 */
-                const response = await fetch('/' + operation, {
+                const response = await fetch('/calculate/' + operation, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ a: a, b: b })
@@ -302,7 +322,7 @@
             } catch (error) {
                 /*
                     Catch Block: Handling Network or Unexpected Errors
-                
+            
                     - Any errors that occur during the fetch operation (e.g., network issues) are caught here.
                     
                     - console.error: Logs the error to the browser's console for debugging.
