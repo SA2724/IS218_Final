@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, field_validator  # Use @validator for Pydantic 1.x
 from fastapi.exceptions import RequestValidationError
-from app.operations import add, subtract, multiply, divide  # Ensure correct import path
+from app.operations import add, subtract, multiply, divide, power, modulus  # Ensure correct import path
 import uvicorn
 import logging
 
@@ -113,6 +113,33 @@ async def divide_route(operation: OperationRequest):
     except Exception as e:
         logger.error(f"Divide Operation Internal Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@app.post("/modulus", response_model=OperationResponse, responses={400: {"model": ErrorResponse}})
+async def modulus_route(operation: OperationRequest):
+    """
+    modulus two numbers.
+    """
+    try:
+        result = modulus(operation.a, operation.b)
+        return OperationResponse(result=result)
+    except ValueError as e:
+        logger.error(f"Mod Operation Error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Mod Operation Internal Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@app.post("/power", response_model=OperationResponse, responses={400: {"model": ErrorResponse}})
+async def power_route(operation: OperationRequest):
+    """
+    Take the power of two numbers.
+    """
+    try:
+        result = power(operation.a, operation.b)
+        return OperationResponse(result=result)
+    except Exception as e:
+        logger.error(f"Power Operation Error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
