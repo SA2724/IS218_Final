@@ -11,16 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 from playwright.sync_api import sync_playwright, Browser, Page  # Added necessary imports
-from app.calculation import (
-    Base,
-    User,
-    Addition,
-    Subtraction,
-    Multiplication,
-    Division,
-    Power, 
-    Modulus 
-)
+from app.calculation import *
 from app.schema import UserData
 from app.settings import Settings
 
