@@ -105,3 +105,62 @@ def divide(a: Number, b: Number) -> float:
     # Perform division of a by b and return the result as a float
     result = a / b
     return result
+
+def power(a: Number, b: Number) -> Number:
+    """
+    Multiply two numbers and return the product.
+
+    Parameters:
+    - a (int or float): The first number to multiply.
+    - b (int or float): The second number to multiply.
+
+    Returns:
+    - int or float: The product of a and b.
+
+    Example:
+    >>> multiply(2, 3)
+    6
+    >>> multiply(2.5, 4)
+    10.0
+    """
+    # Perform multiplication of a and b
+    result = a ** b
+    return result
+
+
+
+
+
+
+def modulus(a: Number, b: Number) -> float:
+    """
+    Divide the first number by the second and return the quotient.
+
+    Parameters:
+    - a (int or float): The dividend.
+    - b (int or float): The divisor.
+
+    Returns:
+    - float: The quotient of a divided by b.
+
+    Raises:
+    - ValueError: If b is zero, as division by zero is undefined.
+
+    Example:
+    >>> divide(6, 3)
+    2.0
+    >>> divide(5.5, 2)
+    2.75
+    >>> divide(5, 0)
+    Traceback (most recent call last):
+        ...
+    ValueError: Cannot divide by zero!
+    """
+    # Check if the divisor is zero to prevent division by zero
+    if b == 0:
+        # Raise a ValueError with a descriptive message
+        raise ValueError("Cannot divide by zero!")
+    
+    # Perform division of a by b and return the result as a float
+    result = a % b
+    return result

@@ -77,6 +77,8 @@ class Calculation(Base, ABC):
             'subtraction': Subtraction,
             'multiplication': Multiplication,
             'division': Division,
+            'power': Power,
+            'modulus': Modulus
         }
         calculation_class = calculation_classes.get(calculation_type.lower())
         if not calculation_class:
@@ -152,6 +154,7 @@ class Division(Calculation):
                 raise ValueError("Cannot divide by zero.")
             result /= value
         return result
+
 # Subclass for Power
 class Power(Calculation):
     __mapper_args__ = {
