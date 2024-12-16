@@ -1,7 +1,7 @@
 import os
 import subprocess
 import time
-from typing import Generator, Optional  # Added Optional for potential use
+from typing import Generator, Optional
 import pytest
 import requests
 from dotenv import load_dotenv
@@ -10,10 +10,12 @@ from passlib.context import CryptContext
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
-from playwright.sync_api import sync_playwright, Browser, Page  # Added necessary imports
+from playwright.sync_api import sync_playwright, Browser, Page
 from app.calculation import *
 from app.schema import UserData
 from app.settings import Settings
+
+from pydantic_settings import SettingsConfigDict
 
 # Initialize Faker and Password Hasher
 fake = Faker()
@@ -26,9 +28,10 @@ load_dotenv(dotenv_path=".env.test")  # Specify the test environment file
 class TestSettings(Settings):
     api_key: str  # Add the api_key field
 
-    class Config:
-        env_prefix = "TEST_DB_"  # Prefix for test database environment variables
-        # extra = 'forbid'  # This is the default; keep it unless you want to allow extra fields
+    model_config = SettingsConfigDict(
+        env_prefix="TEST_DB_",  # Prefix for test database environment variables
+        extra="forbid"          # Disallow extra fields
+    )
 
 test_settings = TestSettings()
 
@@ -125,8 +128,8 @@ def create_calculation(db_session, test_user):
             "subtraction": Subtraction,
             "multiplication": Multiplication,
             "division": Division,
-            "power": Power,        # Add Power if implemented
-            "modulus": Modulus,    # Add Modulus if implemented
+            "power": Power,        # Ensure Power is defined and imported
+            "modulus": Modulus,    # Ensure Modulus is defined and imported
         }.get(calc_type.lower())
         if not calculation_class:
             raise ValueError(f"Unsupported calculation type: {calc_type}")
@@ -192,4 +195,4 @@ def page(browser: Browser) -> Page:  # type: ignore
     """
     page = browser.new_page()
     yield page
-    page.close()  # Removed the extra parenthesis here
+    page.close()
