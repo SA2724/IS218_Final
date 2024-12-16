@@ -1,7 +1,7 @@
 import os
 import subprocess
 import time
-from typing import Generator
+from typing import Generator, Optional  # Added Optional for potential use
 import pytest
 import requests
 from dotenv import load_dotenv
@@ -20,12 +20,15 @@ fake = Faker()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Load environment variables
-load_dotenv()
+load_dotenv(dotenv_path=".env.test")  # Specify the test environment file
 
 # Test Settings
 class TestSettings(Settings):
+    api_key: str  # Add the api_key field
+
     class Config:
         env_prefix = "TEST_DB_"  # Prefix for test database environment variables
+        # extra = 'forbid'  # This is the default; keep it unless you want to allow extra fields
 
 test_settings = TestSettings()
 
@@ -122,6 +125,8 @@ def create_calculation(db_session, test_user):
             "subtraction": Subtraction,
             "multiplication": Multiplication,
             "division": Division,
+            "power": Power,        # Add Power if implemented
+            "modulus": Modulus,    # Add Modulus if implemented
         }.get(calc_type.lower())
         if not calculation_class:
             raise ValueError(f"Unsupported calculation type: {calc_type}")
@@ -172,7 +177,7 @@ def playwright_instance_fixture():
         yield p
 
 @pytest.fixture(scope="session")
-def browser(playwright_instance_fixture) -> Browser: # type: ignore
+def browser(playwright_instance_fixture) -> Browser:  # type: ignore
     """
     Launches a Playwright browser instance.
     """
@@ -181,10 +186,10 @@ def browser(playwright_instance_fixture) -> Browser: # type: ignore
     browser.close()
 
 @pytest.fixture(scope="function")
-def page(browser: Browser) -> Page: # type: ignore
+def page(browser: Browser) -> Page:  # type: ignore
     """
     Provides a new Playwright page for each test.
     """
     page = browser.new_page()
     yield page
-    page.close()
+    page.close()  # Removed the extra parenthesis here
