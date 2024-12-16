@@ -82,6 +82,7 @@
             */
             margin: 5px;
             padding: 5px;
+            width: 200px; /* Optional: Set a consistent width for input fields */
         }
         
         button {
@@ -90,8 +91,31 @@
                 
                 - padding: Adds 5 pixels of vertical padding and 10 pixels of horizontal padding
                   inside buttons to make them larger and more clickable.
+                - margin: Adds a 5-pixel margin around buttons for spacing.
+                - cursor: Changes the cursor to a pointer when hovering over buttons.
+                - background-color: Sets the background color of buttons.
+                - color: Sets the text color of buttons.
+                - border: Removes the default border of buttons.
+                - border-radius: Adds rounded corners to buttons.
+                - transition: Adds a smooth transition effect for hover state.
             */
             padding: 5px 10px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            /*
+                Hover State for Buttons
+                
+                - background-color: Changes the background color when the user hovers over the button.
+            */
+            background-color: #45a049;
         }
         
         .result {
@@ -100,9 +124,13 @@
                 
                 - margin-top: Adds a 10-pixel margin above the result display area.
                 - font-weight: Makes the text bold to emphasize the result.
+                - font-size: Increases the font size for better visibility.
+                - color: Sets the text color to a distinct color for emphasis.
             */
             margin-top: 10px;
             font-weight: bold;
+            font-size: 18px;
+            color: #333;
         }
     </style>
 </head>
@@ -162,7 +190,7 @@
             Inserts a line break after the second input field, moving subsequent elements to the next line.
         -->
         
-        <button onclick="calculate('add')">Add</button>
+        <button onclick="calculate('add')">Add (+)</button>
         <!--
             <button> Element: Add Button
             
@@ -171,7 +199,7 @@
             - "Add": The text displayed on the button.
         -->
         
-        <button onclick="calculate('subtract')">Subtract</button>
+        <button onclick="calculate('subtract')">Subtract (-)</button>
         <!--
             <button> Element: Subtract Button
             
@@ -180,7 +208,7 @@
             - "Subtract": The text displayed on the button.
         -->
         
-        <button onclick="calculate('multiply')">Multiply</button>
+        <button onclick="calculate('multiply')">Multiply (×)</button>
         <!--
             <button> Element: Multiply Button
             
@@ -189,7 +217,7 @@
             - "Multiply": The text displayed on the button.
         -->
         
-        <button onclick="calculate('divide')">Divide</button>
+        <button onclick="calculate('divide')">Divide (÷)</button>
         <!--
             <button> Element: Divide Button
             
@@ -269,13 +297,16 @@
             
             // Get the <div> element where the result or error message will be displayed
             const resultElement = document.getElementById('result');
+
+            // Clear previous result or error
+            resultElement.innerText = '';
     
             try {
                 /*
                     Sending the POST Request
                     
-                    - fetch('/' + operation, {...}): Sends a POST request to the server at the path corresponding
-                      to the operation (e.g., '/add', '/subtract', '/power', '/modulus').
+                    - fetch('/calculate/' + operation, {...}): Sends a POST request to the server at the path corresponding
+                      to the operation (e.g., '/calculate/add', '/calculate/subtract', '/calculate/power', '/calculate/modulus').
                       
                     - method: 'POST': Specifies the HTTP method as POST, indicating that data is being sent to the server.
                     
@@ -312,12 +343,12 @@
                     /*
                         Error Response Handling
                     
-                        - If the response is not successful, it is expected to contain an 'error' field with
+                        - If the response is not successful, it is expected to contain a 'detail' field with
                           a descriptive message.
                           
                         - resultElement.innerText: Updates the text inside the result <div> to display the error message.
                     */
-                    resultElement.innerText = 'Error: ' + data.error;
+                    resultElement.innerText = 'Error: ' + data.detail;
                 }
             } catch (error) {
                 /*
