@@ -1,12 +1,6 @@
 import pytest
 from sqlalchemy.orm import with_polymorphic
-from app.calculation import (
-    Calculation,
-    Addition,
-    Subtraction,
-    Multiplication,
-    Division,
-)
+from app.calculation import *
 
 
 @pytest.mark.parametrize("calculation_type, inputs, expected_result", [
@@ -14,6 +8,9 @@ from app.calculation import (
     ('subtraction', [20, 5], 15),
     ('multiplication', [4, 5], 20),
     ('division', [20, 4], 5),
+    ('power', [4, 2],  16),
+    ('modulus',[5, 5], 1)
+    
 ])
 def test_create_calculation(test_user, db_session, calculation_type, inputs, expected_result):
     """
@@ -46,6 +43,11 @@ def test_create_calculation(test_user, db_session, calculation_type, inputs, exp
         assert isinstance(calculation, Multiplication), "Calculation is not an instance of Multiplication."
     elif calculation_type == 'division':
         assert isinstance(calculation, Division), "Calculation is not an instance of Division."
+    elif calculation_type == 'power':
+        assert isinstance(calculation, Power), "Calculation is not an instance of Power."
+    elif calculation_type == 'modulus':
+        assert isinstance(calculation, Modulus), "Calculation is not an instance of Modulus."
+
 
 
 def test_create_unsupported_calculation_type(test_user, db_session):
@@ -53,7 +55,7 @@ def test_create_unsupported_calculation_type(test_user, db_session):
     Test that creating a Calculation with an unsupported type raises a ValueError.
     """
     # Arrange: Define an unsupported calculation type
-    unsupported_type = 'modulus'
+    unsupported_type = 'Sin'
     
     # Act & Assert: Attempt to create a Calculation and expect a ValueError
     with pytest.raises(ValueError, match=f"Unsupported calculation type: {unsupported_type}"):
@@ -86,6 +88,28 @@ def test_division_by_zero(test_user, db_session, inputs):
     # Act & Assert: Attempt to compute the result and expect a ValueError
     with pytest.raises(ValueError, match="Cannot divide by zero."):
         division.get_result()
+
+
+@pytest.mark.parametrize("inputs", [
+    [10, 0],  # Division by zero
+])
+def test_modulus_by_zero(test_user, db_session, inputs):
+    """
+    Test that dividing by zero raises a ValueError.
+    """
+    # Arrange: Use the factory method to create a Division instance with inputs including zero
+    Modulus = Calculation.create(
+        calculation_type='modulus',
+        user_id=test_user.id,
+        inputs=inputs
+    )
+    db_session.add(Modulus)
+    db_session.commit()
+    db_session.refresh(Modulus)
+    
+    # Act & Assert: Attempt to compute the result and expect a ValueError
+    with pytest.raises(ValueError, match="Cannot divide by zero."):
+        Modulus.get_result()
 
 
 def test_update_calculation(test_user, db_session):
