@@ -41,20 +41,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install Playwright (if using Playwright)
-        if: success() && steps.playwright.outputs.use_playwright == 'true'
+      # Optional: Install Playwright Browsers (if using Playwright for E2E tests)
+      - name: Install Playwright Browsers
+        if: always()  # Ensures this step runs regardless of previous step success
         run: |
           pip install playwright
-          playwright install  # Only if you are using Playwright for E2E tests
+          playwright install
 
-      - name: Wait for PostgreSQL
+      - name: Wait for PostgreSQL to be ready
         run: |
           echo "Waiting for PostgreSQL to be ready..."
-          until pg_isready -h localhost -p 5432; do
-            echo "PostgreSQL is not ready yet. Waiting..."
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 && break
+            echo "PostgreSQL not ready yet. Waiting..."
             sleep 1
           done
-          echo "PostgreSQL is ready."
+          pg_isready -h localhost -p 5432
+        # Fail the job if PostgreSQL isn't ready after retries
+        continue-on-error: false
 
       - name: Run tests with pytest and enforce 50% coverage
         env:
@@ -68,8 +72,8 @@ jobs:
         run: |
           pytest --cov=app --cov-fail-under=50 --cov-report=xml --cov-report=term-missing
 
-      # Optional: Upload coverage to Codecov or Coveralls
-      # Uncomment and configure if you use a coverage reporting service
+      # Optional: Upload coverage to Codecov
+      # Uncomment the following lines if you use Codecov for coverage reporting
       # - name: Upload coverage to Codecov
       #   uses: codecov/codecov-action@v3
       #   with:
@@ -77,3 +81,8 @@ jobs:
       #     flags: unittests
       #     name: codecov-umbrella
       #     fail_ci_if_error: true
+
+      # Optional: Show PostgreSQL Logs on Failure
+      - name: Show PostgreSQL Logs on Failure
+        if: failure()
+        run: docker logs ${{ job.services.postgres.id }}
