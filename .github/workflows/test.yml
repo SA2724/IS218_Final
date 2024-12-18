@@ -12,6 +12,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
@@ -19,14 +34,46 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'  # Set your desired Python version
+          python-version: '3.12'  # Set your desired Python version
 
       - name: Install dependencies from requirements.txt
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov  # Ensure pytest-cov is installed
 
-      - name: Run tests with pytest and enforce 70% coverage
+      - name: Install Playwright (if using Playwright)
+        if: success() && steps.playwright.outputs.use_playwright == 'true'
         run: |
-          pytest --cov=app --cov-fail-under=50
+          pip install playwright
+          playwright install  # Only if you are using Playwright for E2E tests
+
+      - name: Wait for PostgreSQL
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          until pg_isready -h localhost -p 5432; do
+            echo "PostgreSQL is not ready yet. Waiting..."
+            sleep 1
+          done
+          echo "PostgreSQL is ready."
+
+      - name: Run tests with pytest and enforce 50% coverage
+        env:
+          db_host: localhost
+          db_user: ${{ secrets.DB_USER }}
+          db_password: ${{ secrets.DB_PASSWORD }}
+          db_name: ${{ secrets.DB_NAME }}
+          db_port: 5432
+          salt: ${{ secrets.SALT }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          pytest --cov=app --cov-fail-under=50 --cov-report=xml --cov-report=term-missing
+
+      # Optional: Upload coverage to Codecov or Coveralls
+      # Uncomment and configure if you use a coverage reporting service
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     files: ./coverage.xml
+      #     flags: unittests
+      #     name: codecov-umbrella
+      #     fail_ci_if_error: true

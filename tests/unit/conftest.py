@@ -1,4 +1,4 @@
-# tests/unity/conftest.py
+# tests/unit/conftest.py
 
 import os
 import subprocess
@@ -8,7 +8,6 @@ from urllib.parse import quote_plus  # Import for URL encoding
 
 import pytest
 import requests
-from dotenv import load_dotenv
 from faker import Faker
 from passlib.context import CryptContext
 from sqlalchemy import create_engine
@@ -18,38 +17,28 @@ from playwright.sync_api import sync_playwright, Browser, Page
 from app.calculation import *
 from app.schema import UserData
 from app.settings import TestSettings  # Import TestSettings from app.settings
-from pydantic import Field, ConfigDict  # Only ConfigDict here
 
 # Initialize Faker and Password Hasher
 fake = Faker()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Load environment variables via fixture
-@pytest.fixture(scope="session", autouse=True)
-def load_test_env():
+@pytest.fixture(scope="session")
+def test_settings() -> TestSettings:
     """
-    Load the .env.test file for all tests.
+    Fixture to provide TestSettings instance.
     """
-    dotenv_path = os.path.join(os.path.dirname(__file__), ".env.test")
-    load_dotenv(dotenv_path)
-
-# Define test_settings using TestSettings from app.settings
-test_settings = TestSettings()
-
-# Encode the password to handle special characters
-encoded_password = quote_plus(test_settings.db_password)
-
-# Define test database URL with the encoded password
-TEST_DATABASE_URL = (
-    f'postgresql://{test_settings.db_user}:{encoded_password}'
-    f'@{test_settings.db_host}:{test_settings.db_port}/{test_settings.db_name}'
-)
+    return TestSettings()
 
 @pytest.fixture(scope="session")
-def engine() -> Generator:
+def engine(test_settings: TestSettings) -> Generator:
     """
     Creates a SQLAlchemy engine connected to the test database.
     """
+    encoded_password = quote_plus(test_settings.db_password)
+    TEST_DATABASE_URL = (
+        f'postgresql://{test_settings.db_user}:{encoded_password}'
+        f'@{test_settings.db_host}:{test_settings.db_port}/{test_settings.db_name}'
+    )
     engine = create_engine(TEST_DATABASE_URL, echo=False)
     try:
         yield engine
@@ -88,7 +77,7 @@ def db_session(SessionLocal) -> Generator:
         session.close()
 
 @pytest.fixture(scope="function")
-def test_user(db_session) -> User:
+def test_user(db_session, test_settings) -> User:
     """
     Creates a test user in the database.
     """
