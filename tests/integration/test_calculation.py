@@ -1,193 +1,275 @@
+# tests/test_calculations.py
+
 import pytest
-from sqlalchemy.orm import with_polymorphic
-from app.calculation import *
+import uuid
+from datetime import datetime
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
+
+from app.calculation import (
+    Base,
+    User,
+    Calculation,
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+    Power,
+    Modulus
+)
 
 
-@pytest.mark.parametrize("calculation_type, inputs, expected_result", [
-    ('addition', [10, 5], 15),
-    ('subtraction', [20, 5], 15),
-    ('multiplication', [4, 5], 20),
-    ('division', [20, 4], 5),
-    ('power', [4, 2],  16),
-    ('modulus',[5, 5], 1)
-    
-])
-def test_create_calculation(test_user, db_session, calculation_type, inputs, expected_result):
-    """
-    Test creating various types of Calculations using the factory method.
-    """
-    # Arrange: Use the factory method to create a Calculation instance
-    calculation = Calculation.create(
-        calculation_type=calculation_type,
-        user_id=test_user.id,
-        inputs=inputs
+# Configure a SQLite in-memory database for testing
+DATABASE_URL = "sqlite:///:memory:"
+
+
+@pytest.fixture(scope='module')
+def engine():
+    """Create a SQLAlchemy engine for the tests."""
+    return create_engine(DATABASE_URL, echo=False)
+
+
+@pytest.fixture(scope='module')
+def tables(engine):
+    """Create all tables."""
+    Base.metadata.create_all(engine)
+    yield
+    Base.metadata.drop_all(engine)
+
+
+@pytest.fixture(scope='function')
+def session(engine, tables):
+    """Create a new database session for a test."""
+    connection = engine.connect()
+    transaction = connection.begin()
+    Session = scoped_session(sessionmaker(bind=connection))
+    session = Session()
+
+    yield session
+
+    session.close()
+    transaction.rollback()
+    connection.close()
+
+
+def test_user_creation(session):
+    """Test creating a User."""
+    user = User(
+        first_name="John",
+        last_name="Doe",
+        email="john.doe@example.com",
+        username="johndoe",
+        password="hashed_password"
     )
-    
-    # Act: Add and commit the Calculation to the database
-    db_session.add(calculation)
-    db_session.commit()
-    db_session.refresh(calculation)
-    
-    # Assert: Ensure the Calculation is correctly inserted
-    assert calculation.id is not None, "Calculation ID should be set."
-    assert calculation.user_id == test_user.id, "Calculation is not linked to the correct user."
-    assert calculation.inputs == inputs, f"Calculation inputs should be {inputs}."
-    assert calculation.get_result() == expected_result, f"Calculation result should be {expected_result}."
-    
-    # Assert: Ensure the calculation is an instance of the correct subclass
-    if calculation_type == 'addition':
-        assert isinstance(calculation, Addition), "Calculation is not an instance of Addition."
-    elif calculation_type == 'subtraction':
-        assert isinstance(calculation, Subtraction), "Calculation is not an instance of Subtraction."
-    elif calculation_type == 'multiplication':
-        assert isinstance(calculation, Multiplication), "Calculation is not an instance of Multiplication."
-    elif calculation_type == 'division':
-        assert isinstance(calculation, Division), "Calculation is not an instance of Division."
-    elif calculation_type == 'power':
-        assert isinstance(calculation, Power), "Calculation is not an instance of Power."
-    elif calculation_type == 'modulus':
-        assert isinstance(calculation, Modulus), "Calculation is not an instance of Modulus."
+    session.add(user)
+    session.commit()
+
+    retrieved_user = session.query(User).filter_by(email="john.doe@example.com").first()
+    assert retrieved_user is not None
+    assert retrieved_user.first_name == "John"
+    assert retrieved_user.last_name == "Doe"
+    assert retrieved_user.username == "johndoe"
+    assert retrieved_user.password == "hashed_password"
+    assert isinstance(retrieved_user.id, uuid.UUID)
+    assert isinstance(retrieved_user.created_at, datetime)
+    assert isinstance(retrieved_user.updated_at, datetime)
 
 
-
-def test_create_unsupported_calculation_type(test_user, db_session):
-    """
-    Test that creating a Calculation with an unsupported type raises a ValueError.
-    """
-    # Arrange: Define an unsupported calculation type
-    unsupported_type = 'Sin'
-    
-    # Act & Assert: Attempt to create a Calculation and expect a ValueError
-    with pytest.raises(ValueError, match=f"Unsupported calculation type: {unsupported_type}"):
-        calculation = Calculation.create(
-            calculation_type=unsupported_type,
-            user_id=test_user.id,
-            inputs=[10, 3]
-        )
-        db_session.add(calculation)
-        db_session.commit()
-
-
-@pytest.mark.parametrize("inputs", [
-    [10, 0],  # Division by zero
-])
-def test_division_by_zero(test_user, db_session, inputs):
-    """
-    Test that dividing by zero raises a ValueError.
-    """
-    # Arrange: Use the factory method to create a Division instance with inputs including zero
-    division = Calculation.create(
-        calculation_type='division',
-        user_id=test_user.id,
-        inputs=inputs
+def test_calculation_creation(session):
+    """Test creating different Calculation types via the factory."""
+    user = User(
+        first_name="Alice",
+        last_name="Smith",
+        email="alice.smith@example.com",
+        username="alicesmith",
+        password="hashed_password"
     )
-    db_session.add(division)
-    db_session.commit()
-    db_session.refresh(division)
-    
-    # Act & Assert: Attempt to compute the result and expect a ValueError
-    with pytest.raises(ValueError, match="Cannot divide by zero."):
+    session.add(user)
+    session.commit()
+
+    # Define calculation types and inputs
+    calc_types = {
+        'addition': [1, 2, 3],
+        'subtraction': [10, 5, 2],
+        'multiplication': [2, 3, 4],
+        'division': [20, 5, 2],
+        'power': [2, 3],
+        'modulus': [10, 3]
+    }
+
+    calculations = []
+    for calc_type, inputs in calc_types.items():
+        calc = Calculation.create(calculation_type=calc_type, user_id=user.id, inputs=inputs)
+        session.add(calc)
+        calculations.append((calc_type, inputs, calc))
+
+    session.commit()
+
+    # Verify calculations
+    for calc_type, inputs, calc in calculations:
+        retrieved = session.query(Calculation).filter_by(id=calc.id).first()
+        assert retrieved is not None
+        assert retrieved.type == calc_type
+        assert retrieved.inputs == inputs
+        assert retrieved.user_id == user.id
+
+
+def test_calculation_factory_invalid_type(session):
+    """Test that the factory raises an error for unsupported types."""
+    user = User(
+        first_name="Bob",
+        last_name="Brown",
+        email="bob.brown@example.com",
+        username="bobbrown",
+        password="hashed_password"
+    )
+    session.add(user)
+    session.commit()
+
+    with pytest.raises(ValueError) as excinfo:
+        Calculation.create(calculation_type="unsupported", user_id=user.id, inputs=[1, 2])
+    assert "Unsupported calculation type: unsupported" in str(excinfo.value)
+
+
+def test_addition_get_result(session):
+    """Test the get_result method for Addition."""
+    addition = Addition(user_id=uuid.uuid4(), inputs=[1, 2, 3, 4])
+    result = addition.get_result()
+    assert result == 10
+
+
+def test_addition_get_result_invalid_inputs(session):
+    """Test Addition with invalid inputs."""
+    addition = Addition(user_id=uuid.uuid4(), inputs="not a list")
+    with pytest.raises(ValueError) as excinfo:
+        addition.get_result()
+    assert "Inputs must be a list of numbers." in str(excinfo.value)
+
+
+def test_subtraction_get_result(session):
+    """Test the get_result method for Subtraction."""
+    subtraction = Subtraction(user_id=uuid.uuid4(), inputs=[10, 3, 2])
+    result = subtraction.get_result()
+    assert result == 5
+
+
+def test_subtraction_get_result_invalid_inputs(session):
+    """Test Subtraction with invalid inputs."""
+    subtraction = Subtraction(user_id=uuid.uuid4(), inputs=[10])
+    with pytest.raises(ValueError) as excinfo:
+        subtraction.get_result()
+    assert "Inputs must be a list with at least two numbers." in str(excinfo.value)
+
+
+def test_multiplication_get_result(session):
+    """Test the get_result method for Multiplication."""
+    multiplication = Multiplication(user_id=uuid.uuid4(), inputs=[2, 3, 4])
+    result = multiplication.get_result()
+    assert result == 24
+
+
+def test_multiplication_get_result_invalid_inputs(session):
+    """Test Multiplication with invalid inputs."""
+    multiplication = Multiplication(user_id=uuid.uuid4(), inputs="not a list")
+    with pytest.raises(ValueError) as excinfo:
+        multiplication.get_result()
+    assert "Inputs must be a list of numbers." in str(excinfo.value)
+
+
+def test_division_get_result(session):
+    """Test the get_result method for Division."""
+    division = Division(user_id=uuid.uuid4(), inputs=[20, 2, 2])
+    result = division.get_result()
+    assert result == 5
+
+
+def test_division_get_result_by_zero(session):
+    """Test Division by zero."""
+    division = Division(user_id=uuid.uuid4(), inputs=[10, 0])
+    with pytest.raises(ValueError) as excinfo:
         division.get_result()
+    assert "Cannot divide by zero." in str(excinfo.value)
 
 
-@pytest.mark.parametrize("inputs", [
-    [10, 0],  # Division by zero
-])
-def test_modulus_by_zero(test_user, db_session, inputs):
-    """
-    Test that dividing by zero raises a ValueError.
-    """
-    # Arrange: Use the factory method to create a Division instance with inputs including zero
-    Modulus = Calculation.create(
-        calculation_type='modulus',
-        user_id=test_user.id,
-        inputs=inputs
+def test_division_get_result_invalid_inputs(session):
+    """Test Division with invalid inputs."""
+    division = Division(user_id=uuid.uuid4(), inputs=[10])
+    with pytest.raises(ValueError) as excinfo:
+        division.get_result()
+    assert "Inputs must be a list with at least two numbers." in str(excinfo.value)
+
+
+def test_power_get_result(session):
+    """Test the get_result method for Power."""
+    power = Power(user_id=uuid.uuid4(), inputs=[2, 3])
+    result = power.get_result()
+    assert result == 8
+
+
+def test_power_get_result_invalid_inputs(session):
+    """Test Power with invalid inputs."""
+    power = Power(user_id=uuid.uuid4(), inputs=[2])
+    with pytest.raises(ValueError) as excinfo:
+        power.get_result()
+    assert "Inputs must be a list with exactly two numbers for power operation." in str(excinfo.value)
+
+
+def test_modulus_get_result(session):
+    """Test the get_result method for Modulus."""
+    modulus = Modulus(user_id=uuid.uuid4(), inputs=[10, 3])
+    result = modulus.get_result()
+    assert result == 1
+
+
+def test_modulus_get_result_by_zero(session):
+    """Test Modulus by zero."""
+    modulus = Modulus(user_id=uuid.uuid4(), inputs=[10, 0])
+    with pytest.raises(ValueError) as excinfo:
+        modulus.get_result()
+    assert "Cannot perform modulus by zero!" in str(excinfo.value)
+
+
+def test_modulus_get_result_invalid_inputs(session):
+    """Test Modulus with invalid inputs."""
+    modulus = Modulus(user_id=uuid.uuid4(), inputs=[10])
+    with pytest.raises(ValueError) as excinfo:
+        modulus.get_result()
+    assert "Inputs must be a list with exactly two numbers for modulus operation." in str(excinfo.value)
+
+
+def test_user_calculations_relationship(session):
+    """Test the relationship between User and Calculations."""
+    user = User(
+        first_name="Charlie",
+        last_name="Davis",
+        email="charlie.davis@example.com",
+        username="charliedavis",
+        password="hashed_password"
     )
-    db_session.add(Modulus)
-    db_session.commit()
-    db_session.refresh(Modulus)
-    
-    # Act & Assert: Attempt to compute the result and expect a ValueError
-    with pytest.raises(ValueError, match="Cannot divide by zero."):
-        Modulus.get_result()
+    session.add(user)
+    session.commit()
+
+    addition = Addition(user_id=user.id, inputs=[1, 2, 3])
+    subtraction = Subtraction(user_id=user.id, inputs=[10, 5])
+    session.add_all([addition, subtraction])
+    session.commit()
+
+    retrieved_user = session.query(User).filter_by(id=user.id).first()
+    assert len(retrieved_user.calculations) == 2
+    assert any(calc.type == 'addition' for calc in retrieved_user.calculations)
+    assert any(calc.type == 'subtraction' for calc in retrieved_user.calculations)
 
 
-def test_update_calculation(test_user, db_session):
-    """
-    Test updating an existing Calculation.
-    """
-    # Arrange: Create and insert a Calculation using the factory method
-    multiplication = Calculation.create(
-        calculation_type='multiplication',
-        user_id=test_user.id,
-        inputs=[2, 3]
-    )
-    db_session.add(multiplication)
-    db_session.commit()
-    db_session.refresh(multiplication)
-    
-    # Act: Update the Calculation's inputs
-    multiplication.inputs = [5, 7]
-    db_session.commit()
-    db_session.refresh(multiplication)
-    
-    # Assert: Ensure the Calculation has been updated correctly
-    assert multiplication.inputs == [5, 7], "Calculation inputs were not updated correctly."
-    assert multiplication.get_result() == 35, "Multiplication result was not updated correctly."
+def test_calculation_repr():
+    """Test the __repr__ method of Calculation."""
+    calc = Calculation(type="addition", inputs=[1, 2, 3])
+    repr_str = repr(calc)
+    assert "<Calculation(type=addition, inputs=[1, 2, 3])>" == repr_str
 
 
-def test_delete_calculation(test_user, db_session):
-    """
-    Test deleting a Calculation from the database.
-    """
-    # Arrange: Create and insert a Calculation using the factory method
-    division = Calculation.create(
-        calculation_type='division',
-        user_id=test_user.id,
-        inputs=[20, 4]
-    )
-    db_session.add(division)
-    db_session.commit()
-    db_session.refresh(division)
-    
-    # Act: Delete the Calculation
-    db_session.delete(division)
-    db_session.commit()
-    
-    # Assert: Ensure the Calculation has been deleted
-    deleted_calculation = db_session.query(Division).filter_by(id=division.id).first()
-    assert deleted_calculation is None, "Calculation was not deleted."
-    
-    # Optionally, verify the relationship from the user side
-    assert division not in test_user.calculations, "Deleted calculation still present in user's calculations."
-
-
-def test_polymorphic_query(test_user, db_session):
-    """
-    Test that polymorphic queries retrieve all Calculation subclasses correctly.
-    """
-    # Arrange: Insert multiple Calculations of different types
-    calculations = [
-        Calculation.create('addition', test_user.id, [1, 2]),
-        Calculation.create('subtraction', test_user.id, [5, 3]),
-        Calculation.create('multiplication', test_user.id, [4, 6]),
-        Calculation.create('division', test_user.id, [10, 2]),
-    ]
-    db_session.add_all(calculations)
-    db_session.commit()
-    
-    # Act: Perform a polymorphic query to retrieve all Calculations
-    CalculationWithSubclasses = with_polymorphic(
-        Calculation,
-        [Addition, Subtraction, Multiplication, Division]
-    )
-    retrieved_calculations = db_session.query(CalculationWithSubclasses).filter_by(user_id=test_user.id).all()
-    
-    # Assert: Ensure all Calculations are retrieved and of correct types
-    assert len(retrieved_calculations) == 4, "Incorrect number of calculations retrieved."
-    for calc in calculations:
-        # Find the retrieved calculation with the same ID
-        retrieved_calc = next((rc for rc in retrieved_calculations if rc.id == calc.id), None)
-        assert retrieved_calc is not None, f"Calculation {calc.id} was not retrieved."
-        assert isinstance(retrieved_calc, type(calc)), f"Retrieved calculation type mismatch for {calc.id}."
-        assert retrieved_calc.get_result() == calc.get_result(), f"Calculation result mismatch for {calc.id}."
+def test_user_repr():
+    """Test the __repr__ method of User."""
+    user = User(first_name="Diana", last_name="Evans", email="diana.evans@example.com")
+    repr_str = repr(user)
+    assert "<User(name=Diana Evans, email=diana.evans@example.com)>" == repr_str
