@@ -1,23 +1,26 @@
-# Load environment variables from .env file
-from typing import Optional
-from dotenv import load_dotenv
+# app/settings.py
+
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict, Field
 
-
-load_dotenv()
-
-# Pydantic Settings for Configuration
 class Settings(BaseSettings):
     db_host: str
     db_user: str
     db_password: str
     db_name: str
-    db_port: Optional[int] = 5432  # Default PostgreSQL port
-    salt: str  # Additional salt for password hashing
+    db_port: int
+    salt: str
 
-    class Config:
-        env_file = ".env"
-        env_prefix = "DB_"  # Prefix only for database-related environment variables
-        fields = {
-            'salt': {'env': 'SALT'},  # Map 'salt' to 'SALT' without the 'DB_' prefix
-        }
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8"
+    )
+
+class TestSettings(Settings):
+    api_key: str = Field(..., alias="API_KEY")  # Explicitly map API_KEY
+
+    model_config = ConfigDict(
+        env_file=".env.test",
+        env_file_encoding="utf-8",
+        extra="forbid"  # Disallow extra fields
+    )

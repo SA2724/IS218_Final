@@ -3,8 +3,9 @@
 import os
 import subprocess
 import time
-from typing import Generator, Optional
-from pydantic import ConfigDict, Field
+from typing import Generator
+from urllib.parse import quote_plus  # Import for URL encoding
+
 import pytest
 import requests
 from dotenv import load_dotenv
@@ -16,9 +17,8 @@ from sqlalchemy.orm import sessionmaker
 from playwright.sync_api import sync_playwright, Browser, Page
 from app.calculation import *
 from app.schema import UserData
-from app.settings import Settings
-
-from pydantic_settings import SettingsConfigDict
+from app.settings import TestSettings  # Import TestSettings from app.settings
+from pydantic import Field, ConfigDict  # Only ConfigDict here
 
 # Initialize Faker and Password Hasher
 fake = Faker()
@@ -33,28 +33,15 @@ def load_test_env():
     dotenv_path = os.path.join(os.path.dirname(__file__), ".env.test")
     load_dotenv(dotenv_path)
 
-# Test Settings
-class TestSettings(Settings):
-    db_host: str
-    db_user: str
-    db_password: str
-    db_name: str
-    db_port: int
-    salt: str
-    api_key: str = Field(..., env="API_KEY")  # Explicitly map API_KEY
-
-    model_config = ConfigDict(
-        env_file=".env.test",
-        env_file_encoding="utf-8",
-        env_prefix="TEST_DB_",  # Only if .env.test uses the prefix
-        extra="forbid"
-    )
-
+# Define test_settings using TestSettings from app.settings
 test_settings = TestSettings()
 
-# Define test database URL
+# Encode the password to handle special characters
+encoded_password = quote_plus(test_settings.db_password)
+
+# Define test database URL with the encoded password
 TEST_DATABASE_URL = (
-    f'postgresql://{test_settings.db_user}:{test_settings.db_password}'
+    f'postgresql://{test_settings.db_user}:{encoded_password}'
     f'@{test_settings.db_host}:{test_settings.db_port}/{test_settings.db_name}'
 )
 
