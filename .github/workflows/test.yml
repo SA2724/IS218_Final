@@ -12,17 +12,8 @@ jobs:
   test:
     runs-on: ubuntu-latest  # Uses the latest Ubuntu runner
 
-    env:
-      DB_HOST: sqlite:///:memory:
-      DB_USER: postgres
-      DB_PASSWORD: ""
-      DB_NAME: ""
-      DB_PORT: 0
-      API_KEY: ${{ secrets.API_KEY }}
-      SALT: ${{ secrets.SALT }}
-
     steps:
-      # 1. Checkout the Repository
+      # 1. Check Out the Repository
       - name: Check out the code
         uses: actions/checkout@v3
 
@@ -54,13 +45,25 @@ jobs:
           pip install playwright
           playwright install --with-deps
 
-      # 6. Start FastAPI Server
+      # 6. Create .env.test File with Correct Variables
+      - name: Create .env.test file
+        run: |
+          mkdir -p tests/unity
+          echo "db_host=sqlite:///:memory:" > tests/unity/.env.test
+          echo "db_user=postgres" >> tests/unity/.env.test
+          echo "db_password=" >> tests/unity/.env.test
+          echo "db_name=" >> tests/unity/.env.test
+          echo "db_port=0" >> tests/unity/.env.test
+          echo "salt=aafasdfsdfsdfasdf" >> tests/unity/.env.test
+          echo "API_KEY=${{ secrets.API_KEY }}" >> tests/unity/.env.test
+
+      # 7. Start FastAPI Server
       - name: Start FastAPI server
         run: |
           nohup uvicorn main:app --host 0.0.0.0 --port 8000 > server.log 2>&1 &
           echo "FastAPI server started"
 
-      # 7. Wait for FastAPI Server to be Ready
+      # 8. Wait for FastAPI Server to be Ready
       - name: Wait for FastAPI server to be ready
         run: |
           echo "Waiting for FastAPI server to be ready..."
@@ -71,7 +74,7 @@ jobs:
           done
           nc -z localhost 8000
 
-      # 8. Run Tests with Pytest and Enforce Coverage
+      # 9. Run Tests with Pytest and Enforce Coverage
       - name: Run tests with pytest and enforce 50% coverage
         run: |
           pytest --cov=app --cov-fail-under=50 --cov-report=xml --cov-report=term-missing
