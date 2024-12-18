@@ -1,16 +1,18 @@
+# .github/workflows/ci.yml
+
 name: Run Tests on Push or Pull Request to Main
 
 on:
   push:
     branches:
-      - main  # Triggers workflow on any push to the main branch
+      - main
   pull_request:
     branches:
-      - main  # Triggers workflow on any pull request targeting the main branch
+      - main
 
 jobs:
   test:
-    runs-on: ubuntu-latest  # Uses the latest Ubuntu runner
+    runs-on: ubuntu-latest
 
     steps:
       # 1. Check Out the Repository
@@ -53,7 +55,7 @@ jobs:
           echo "db_user=postgres" >> tests/unity/.env.test
           echo "db_password=" >> tests/unity/.env.test
           echo "db_name=" >> tests/unity/.env.test
-          echo "db_port=0" >> tests/unity/.env.test
+          echo "db_port=0" >> tests/unity/.env.test  # Set to a valid integer
           echo "salt=aafasdfsdfsdfasdf" >> tests/unity/.env.test
           echo "API_KEY=${{ secrets.API_KEY }}" >> tests/unity/.env.test
 
@@ -78,3 +80,10 @@ jobs:
       - name: Run tests with pytest and enforce 50% coverage
         run: |
           pytest --cov=app --cov-fail-under=50 --cov-report=xml --cov-report=term-missing
+
+      # 10. Display Server Logs if Tests Fail
+      - name: Display server logs if tests fail
+        if: failure()
+        run: |
+          echo "Displaying server logs..."
+          cat server.log

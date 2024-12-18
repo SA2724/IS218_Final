@@ -3,22 +3,22 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, Field, field_validator  # Use @validator for Pydantic 1.x
+from pydantic import BaseModel, Field, validator  # Use @validator for Pydantic 1.x
 from fastapi.exceptions import RequestValidationError
-from app.operations import *# Ensure correct import path
+from app.operations import *  # Ensure correct import path
 import uvicorn
 import logging
 import requests
 import json
 from dotenv import load_dotenv
 import os
+
 # Load environment variables from .env file
 load_dotenv()
 
 # API Endpoint and API Key
 API_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
-API_KEY = os.getenv("API_KEY")  
-
+API_KEY = os.getenv("API_KEY")
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +28,7 @@ app = FastAPI()
 
 # Setup templates directory
 templates = Jinja2Templates(directory="templates")
+
 def call_groq_function(prompt, model="llama3-8b-8192"):
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -37,81 +38,80 @@ def call_groq_function(prompt, model="llama3-8b-8192"):
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
-        "functions":[ 
-        {
-            "name": "add",
-            "description": "Add two numbers.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number", "description": "The first number."},
-                    "b": {"type": "number", "description": "The second number."}
+        "functions": [ 
+            {
+                "name": "add",
+                "description": "Add two numbers.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "a": {"type": "number", "description": "The first number."},
+                        "b": {"type": "number", "description": "The second number."}
+                    },
+                    "required": ["a", "b"]
                 },
-                "required": ["a", "b"]
             },
-        },
-        {
-            "name": "subtract",
-            "description": "Subtract two numbers.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number", "description": "The first number."},
-                    "b": {"type": "number", "description": "The second number."}
+            {
+                "name": "subtract",
+                "description": "Subtract two numbers.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "a": {"type": "number", "description": "The first number."},
+                        "b": {"type": "number", "description": "The second number."}
+                    },
+                    "required": ["a", "b"]
                 },
-                "required": ["a", "b"]
             },
-        },
-        {
-            "name": "multiply",
-            "description": "Multiply two numbers.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number", "description": "The first number."},
-                    "b": {"type": "number", "description": "The second number."}
+            {
+                "name": "multiply",
+                "description": "Multiply two numbers.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "a": {"type": "number", "description": "The first number."},
+                        "b": {"type": "number", "description": "The second number."}
+                    },
+                    "required": ["a", "b"]
                 },
-                "required": ["a", "b"]
             },
-        },
-        {
-            "name": "divide",
-            "description": "Divide two numbers.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number", "description": "The first number."},
-                    "b": {"type": "number", "description": "The second number."}
+            {
+                "name": "divide",
+                "description": "Divide two numbers.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "a": {"type": "number", "description": "The first number."},
+                        "b": {"type": "number", "description": "The second number."}
+                    },
+                    "required": ["a", "b"]
                 },
-                "required": ["a", "b"]
             },
-        },
-        {
-            "name": "Power",
-            "description": "Power two numbers.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number", "description": "The first number."},
-                    "b": {"type": "number", "description": "The second number."}
+            {
+                "name": "power",
+                "description": "Raise the first number to the power of the second number.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "a": {"type": "number", "description": "The base number."},
+                        "b": {"type": "number", "description": "The exponent."}
+                    },
+                    "required": ["a", "b"]
                 },
-                "required": ["a", "b"]
             },
-        },
-        {
-            "name": "Modulus",
-            "description": "Modulus two numbers.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number", "description": "The first number."},
-                    "b": {"type": "number", "description": "The second number."}
+            {
+                "name": "modulus",
+                "description": "Compute the modulus of two numbers.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "a": {"type": "number", "description": "The dividend."},
+                        "b": {"type": "number", "description": "The divisor."}
+                    },
+                    "required": ["a", "b"]
                 },
-                "required": ["a", "b"]
-            },
-        }
-    ],
-
+            }
+        ],
         "function_call": "auto",
     }
 
@@ -129,16 +129,15 @@ def call_groq_function(prompt, model="llama3-8b-8192"):
         return None, None
 
     except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return None, None
-
 
 # Pydantic model for request data
 class OperationRequest(BaseModel):
     a: float = Field(..., description="The first number")
     b: float = Field(..., description="The second number")
 
-    @field_validator('a', 'b')  # Correct decorator for Pydantic 1.x
+    @validator('a', 'b')  # Correct decorator for Pydantic 1.x
     def validate_numbers(cls, value):
         if not isinstance(value, (int, float)):
             raise ValueError('Both a and b must be numbers.')
@@ -185,12 +184,12 @@ async def add_route(operation: OperationRequest):
     """
     try:
         prompt = gen_add_prompt(operation.a, operation.b)
-        ignore, args = call_groq_function(prompt)
-        if ignore and args:
+        function_name, args = call_groq_function(prompt)
+        if function_name and args:
             result = add(args["a"], args["b"])
         else:
-            logger.error(f"add Operation Error: {str(e)}")
-            raise HTTPException(status_code=400, detail=str(e))
+            logger.error("Add Operation Error: Failed to call external API.")
+            raise HTTPException(status_code=400, detail="Failed to call external API for addition.")
         return OperationResponse(result=result)
     except Exception as e:
         logger.error(f"Add Operation Error: {str(e)}")
@@ -203,12 +202,12 @@ async def subtract_route(operation: OperationRequest):
     """
     try:
         prompt = gen_substraction_prompt(operation.a, operation.b)
-        ignore, args = call_groq_function(prompt)
-        if ignore and args:
-            result = subtract (args["a"], args["b"])
+        function_name, args = call_groq_function(prompt)
+        if function_name and args:
+            result = subtract(args["a"], args["b"])
         else:
-            logger.error(f"Subtract Operation Error: {str(e)}")
-            raise HTTPException(status_code=400, detail=str(e))
+            logger.error("Subtract Operation Error: Failed to call external API.")
+            raise HTTPException(status_code=400, detail="Failed to call external API for subtraction.")
         return OperationResponse(result=result)
     except Exception as e:
         logger.error(f"Subtract Operation Error: {str(e)}")
@@ -221,30 +220,32 @@ async def multiply_route(operation: OperationRequest):
     """
     try:
         prompt = gen_multiply_prompt(operation.a, operation.b)
-        ignore, args = call_groq_function(prompt)
-        if ignore and args:
-            result = multiply (args["a"], args["b"])
+        function_name, args = call_groq_function(prompt)
+        if function_name and args:
+            result = multiply(args["a"], args["b"])
         else:
-            logger.error(f"Multiply Operation Error: {str(e)}")
-            raise HTTPException(status_code=400, detail=str(e))
+            logger.error("Multiply Operation Error: Failed to call external API.")
+            raise HTTPException(status_code=400, detail="Failed to call external API for multiplication.")
         return OperationResponse(result=result)
     except Exception as e:
         logger.error(f"Multiply Operation Error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/divide", response_model=OperationResponse, responses={400: {"model": ErrorResponse}})
+@app.post("/divide", response_model=OperationResponse, responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
 async def divide_route(operation: OperationRequest):
     """
     Divide two numbers.
     """
     try:
         prompt = gen_division_prompt(operation.a, operation.b)
-        ignore, args = call_groq_function(prompt)
-        if ignore and args:
-            result = divide (args["a"], args["b"])
+        function_name, args = call_groq_function(prompt)
+        if function_name and args:
+            if args["b"] == 0:
+                raise ValueError("Cannot divide by zero!")
+            result = divide(args["a"], args["b"])
         else:
-            logger.error(f"Opperation error")
-            raise HTTPException(status_code=400, detail=str(e))
+            logger.error("Divide Operation Error: Failed to call external API.")
+            raise HTTPException(status_code=400, detail="Failed to call external API for division.")
         return OperationResponse(result=result)
     except ValueError as e:
         logger.error(f"Divide Operation Error: {str(e)}")
@@ -256,37 +257,37 @@ async def divide_route(operation: OperationRequest):
 @app.post("/modulus", response_model=OperationResponse, responses={400: {"model": ErrorResponse}})
 async def modulus_route(operation: OperationRequest):
     """
-    modulus two numbers.
+    Compute the modulus of two numbers.
     """
     try:
         prompt = gen_modulus_prompt(operation.a, operation.b)
-        ignore, args = call_groq_function(prompt)
-        if ignore and args:
-            result = modulus (args["a"], args["b"])
+        function_name, args = call_groq_function(prompt)
+        if function_name and args:
+            result = modulus(args["a"], args["b"])
         else:
-            logger.error(f"Mod Operation Error: {str(e)}")
-            raise HTTPException(status_code=400, detail=str(e))
+            logger.error("Modulus Operation Error: Failed to call external API.")
+            raise HTTPException(status_code=400, detail="Failed to call external API for modulus.")
         return OperationResponse(result=result)
     except ValueError as e:
-        logger.error(f"Mod Operation Error: {str(e)}")
+        logger.error(f"Modulus Operation Error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Mod Operation Internal Error: {str(e)}")
+        logger.error(f"Modulus Operation Internal Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.post("/power", response_model=OperationResponse, responses={400: {"model": ErrorResponse}})
 async def power_route(operation: OperationRequest):
     """
-    Take the power of two numbers.
+    Raise the first number to the power of the second number.
     """
     try:
         prompt = gen_power_prompt(operation.a, operation.b)
-        ignore, args = call_groq_function(prompt)
-        if ignore and args:
-            result = power (args["a"], args["b"])
+        function_name, args = call_groq_function(prompt)
+        if function_name and args:
+            result = power(args["a"], args["b"])
         else:
-            logger.error(f"Power Operation Error: {str(e)}")
-            raise HTTPException(status_code=400, detail=str(e))
+            logger.error("Power Operation Error: Failed to call external API.")
+            raise HTTPException(status_code=400, detail="Failed to call external API for power operation.")
         return OperationResponse(result=result)
     except Exception as e:
         logger.error(f"Power Operation Error: {str(e)}")
@@ -294,4 +295,3 @@ async def power_route(operation: OperationRequest):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
-
