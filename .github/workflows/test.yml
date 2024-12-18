@@ -47,17 +47,16 @@ jobs:
           pip install playwright
           playwright install --with-deps
 
-      # 6. Create .env.test File with Correct Variables
-      - name: Create .env.test file
+      # 6. Create .env File with Correct Variables
+      - name: Create .env file
         run: |
-          mkdir -p tests/unity
-          echo "db_host=sqlite:///:memory:" > tests/unity/.env.test
-          echo "db_user=postgres" >> tests/unity/.env.test
-          echo "db_password=" >> tests/unity/.env.test
-          echo "db_name=" >> tests/unity/.env.test
-          echo "db_port=0" >> tests/unity/.env.test  # Set to a valid integer
-          echo "salt=aafasdfsdfsdfasdf" >> tests/unity/.env.test
-          echo "API_KEY=${{ secrets.API_KEY }}" >> tests/unity/.env.test
+          echo "db_host=sqlite:///:memory:" > .env
+          echo "db_user=postgres" >> .env
+          echo "db_password=" >> .env
+          echo "db_name=" >> .env
+          echo "db_port=0" >> .env  # Set to a valid integer
+          echo "salt=aafasdfsdfsdfasdf" >> .env
+          echo "API_KEY=${{ secrets.API_KEY }}" >> .env
 
       # 7. Start FastAPI Server
       - name: Start FastAPI server
