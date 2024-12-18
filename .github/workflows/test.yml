@@ -3,39 +3,27 @@ name: Run Tests on Push or Pull Request to Main
 on:
   push:
     branches:
-      - main  # Run tests on any push to the main branch
+      - main  # Triggers workflow on any push to the main branch
   pull_request:
     branches:
-      - main  # Run tests on any pull request to the main branch
+      - main  # Triggers workflow on any pull request targeting the main branch
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    runs-on: ubuntu-latest  # Uses the latest Ubuntu runner
 
     steps:
+      # 1. Checkout the Repository
       - name: Check out the code
         uses: actions/checkout@v3
 
+      # 2. Set Up Python Environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'  # Set your desired Python version
+          python-version: '3.12'  # Specify your desired Python version
 
+      # 3. Install System Dependencies for Playwright
       - name: Install system dependencies for Playwright
         run: |
           sudo apt-get update
@@ -45,40 +33,48 @@ jobs:
             libharfbuzz-icu0 libsecret-1-0 libhyphen0 libmanette-0.2-0 \
             libgles2 gstreamer1.0-libav
 
+      # 4. Install Python Dependencies
       - name: Install dependencies from requirements.txt
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # 5. Install Playwright Browsers and Dependencies
       - name: Install Playwright Browsers
         run: |
           pip install playwright
           playwright install --with-deps
 
-      - name: Wait for PostgreSQL to be ready
+      # 6. Configure Environment Variables to Avoid Database Usage
+      - name: Set environment variables for testing without database
         run: |
-          echo "Waiting for PostgreSQL to be ready..."
-          for i in {1..30}; do
-            pg_isready -h localhost -p 5432 && break
-            echo "PostgreSQL not ready yet. Waiting..."
-            sleep 1
-          done
-          pg_isready -h localhost -p 5432
+          echo "DB_HOST=sqlite:///:memory:" >> $GITHUB_ENV
+          echo "DB_USER=" >> $GITHUB_ENV
+          echo "DB_PASSWORD=" >> $GITHUB_ENV
+          echo "DB_NAME=" >> $GITHUB_ENV
+          echo "DB_PORT=" >> $GITHUB_ENV
+          echo "API_KEY=${{ secrets.API_KEY }}" >> $GITHUB_ENV
+          echo "SALT=${{ secrets.SALT }}" >> $GITHUB_ENV
+          # Add any other necessary environment variables here
 
+      # 7. Run Tests with Pytest and Enforce Coverage
       - name: Run tests with pytest and enforce 50% coverage
-        env:
-          db_host: localhost
-          db_user: ${{ secrets.DB_USER }}
-          db_password: ${{ secrets.DB_PASSWORD }}
-          db_name: ${{ secrets.DB_NAME }}
-          db_port: 5432
-          salt: ${{ secrets.SALT }}
-          API_KEY: ${{ secrets.API_KEY }}
         run: |
           pytest --cov=app --cov-fail-under=50 --cov-report=xml --cov-report=term-missing
+        env:
+          # Environment variables can also be set here if needed
+          # These are already set in the previous step via $GITHUB_ENV
+          # Alternatively, you can define them here directly
+          # DB_HOST: sqlite:///:memory:
+          # DB_USER: ''
+          # DB_PASSWORD: ''
+          # DB_NAME: ''
+          # DB_PORT: ''
+          # API_KEY: ${{ secrets.API_KEY }}
+          # SALT: ${{ secrets.SALT }}
 
-      # Optional: Upload coverage to Codecov
-      # Uncomment the following lines if you use Codecov for coverage reporting
+      # 8. (Optional) Upload Coverage to Codecov
+      # Uncomment and configure the following step if you use Codecov for coverage reporting
       # - name: Upload coverage to Codecov
       #   uses: codecov/codecov-action@v3
       #   with:
@@ -86,8 +82,3 @@ jobs:
       #     flags: unittests
       #     name: codecov-umbrella
       #     fail_ci_if_error: true
-
-      # Optional: Show PostgreSQL Logs on Failure for Debugging
-      - name: Show PostgreSQL Logs on Failure
-        if: failure()
-        run: docker logs ${{ job.services.postgres.id }}
