@@ -45,19 +45,35 @@ jobs:
           pip install playwright
           playwright install --with-deps
 
-      # 6. Configure Environment Variables to Avoid Database Usage
+      # 6. Start FastAPI Server
+      - name: Start FastAPI server
+        run: |
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 &
+          echo "FastAPI server started"
+
+      # 7. Wait for FastAPI Server to be Ready
+      - name: Wait for FastAPI server to be ready
+        run: |
+          echo "Waiting for FastAPI server to be ready..."
+          for i in {1..30}; do
+            nc -z localhost 8000 && break
+            echo "FastAPI server not ready yet. Waiting..."
+            sleep 1
+          done
+          nc -z localhost 8000
+
+      # 8. Configure Environment Variables to Avoid Database Usage
       - name: Set environment variables for testing without database
         run: |
           echo "DB_HOST=sqlite:///:memory:" >> $GITHUB_ENV
-          echo "DB_USER=" >> $GITHUB_ENV
+          echo "DB_USER=postgres" >> $GITHUB_ENV  # Set to a default valid integer
           echo "DB_PASSWORD=" >> $GITHUB_ENV
           echo "DB_NAME=" >> $GITHUB_ENV
-          echo "DB_PORT=" >> $GITHUB_ENV
+          echo "DB_PORT=0" >> $GITHUB_ENV  # Set to a valid integer to avoid ValidationError
           echo "API_KEY=${{ secrets.API_KEY }}" >> $GITHUB_ENV
           echo "SALT=${{ secrets.SALT }}" >> $GITHUB_ENV
-          # Add any other necessary environment variables here
 
-      # 7. Run Tests with Pytest and Enforce Coverage
+      # 9. Run Tests with Pytest and Enforce Coverage
       - name: Run tests with pytest and enforce 50% coverage
         run: |
           pytest --cov=app --cov-fail-under=50 --cov-report=xml --cov-report=term-missing
