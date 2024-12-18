@@ -61,24 +61,3 @@ jobs:
       - name: Run tests with pytest and enforce 50% coverage
         run: |
           pytest --cov=app --cov-fail-under=50 --cov-report=xml --cov-report=term-missing
-        env:
-          # Environment variables can also be set here if needed
-          # These are already set in the previous step via $GITHUB_ENV
-          # Alternatively, you can define them here directly
-          # DB_HOST: sqlite:///:memory:
-          # DB_USER: ''
-          # DB_PASSWORD: ''
-          # DB_NAME: ''
-          # DB_PORT: ''
-          # API_KEY: ${{ secrets.API_KEY }}
-          # SALT: ${{ secrets.SALT }}
-
-      # 8. (Optional) Upload Coverage to Codecov
-      # Uncomment and configure the following step if you use Codecov for coverage reporting
-      # - name: Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v3
-      #   with:
-      #     files: ./coverage.xml
-      #     flags: unittests
-      #     name: codecov-umbrella
-      #     fail_ci_if_error: true
