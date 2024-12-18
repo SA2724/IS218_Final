@@ -184,6 +184,7 @@ def test_division_get_result(session):
     assert result == 5
 
 
+
 def test_division_get_result_by_zero(session):
     """Test Division by zero."""
     division = Division(user_id=uuid.uuid4(), inputs=[10, 0])
