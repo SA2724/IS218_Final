@@ -1,12 +1,12 @@
-name: Run Tests on Push or Pull Request to Main
+nname: Run Tests on Push or Pull Request to Main
 
 on:
   push:
     branches:
-      - main
+      - main  # Run tests on any push to the main branch
   pull_request:
     branches:
-      - main
+      - main  # Run tests on any pull request to the main branch
 
 jobs:
   test:
@@ -34,7 +34,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'  # Adjust as needed
+          python-version: '3.12'  # Set your desired Python version
 
       - name: Install system dependencies for Playwright
         run: |
@@ -78,6 +78,7 @@ jobs:
           pytest --cov=app --cov-fail-under=50 --cov-report=xml --cov-report=term-missing
 
       # Optional: Upload coverage to Codecov
+      # Uncomment the following lines if you use Codecov for coverage reporting
       # - name: Upload coverage to Codecov
       #   uses: codecov/codecov-action@v3
       #   with:
