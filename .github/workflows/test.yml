@@ -1,4 +1,4 @@
-nname: Run Tests on Push or Pull Request to Main
+name: Run Tests on Push or Pull Request to Main
 
 on:
   push:
