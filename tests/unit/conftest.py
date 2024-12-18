@@ -1,7 +1,10 @@
+# tests/unity/conftest.py
+
 import os
 import subprocess
 import time
 from typing import Generator, Optional
+from pydantic import ConfigDict, Field
 import pytest
 import requests
 from dotenv import load_dotenv
@@ -21,16 +24,30 @@ from pydantic_settings import SettingsConfigDict
 fake = Faker()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Load environment variables
-load_dotenv(dotenv_path=".env.test")  # Specify the test environment file
+# Load environment variables via fixture
+@pytest.fixture(scope="session", autouse=True)
+def load_test_env():
+    """
+    Load the .env.test file for all tests.
+    """
+    dotenv_path = os.path.join(os.path.dirname(__file__), ".env.test")
+    load_dotenv(dotenv_path)
 
 # Test Settings
 class TestSettings(Settings):
-    api_key: str  # Add the api_key field
+    db_host: str
+    db_user: str
+    db_password: str
+    db_name: str
+    db_port: int
+    salt: str
+    api_key: str = Field(..., env="API_KEY")  # Explicitly map API_KEY
 
-    model_config = SettingsConfigDict(
-        env_prefix="TEST_DB_",  # Prefix for test database environment variables
-        extra="forbid"          # Disallow extra fields
+    model_config = ConfigDict(
+        env_file=".env.test",
+        env_file_encoding="utf-8",
+        env_prefix="TEST_DB_",  # Only if .env.test uses the prefix
+        extra="forbid"
     )
 
 test_settings = TestSettings()
@@ -180,7 +197,7 @@ def playwright_instance_fixture():
         yield p
 
 @pytest.fixture(scope="session")
-def browser(playwright_instance_fixture) -> Browser:  # type: ignore
+def browser(playwright_instance_fixture) -> Browser:
     """
     Launches a Playwright browser instance.
     """
@@ -189,7 +206,7 @@ def browser(playwright_instance_fixture) -> Browser:  # type: ignore
     browser.close()
 
 @pytest.fixture(scope="function")
-def page(browser: Browser) -> Page:  # type: ignore
+def page(browser: Browser) -> Page:
     """
     Provides a new Playwright page for each test.
     """
