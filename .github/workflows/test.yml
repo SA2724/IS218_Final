@@ -12,6 +12,15 @@ jobs:
   test:
     runs-on: ubuntu-latest  # Uses the latest Ubuntu runner
 
+    env:
+      DB_HOST: sqlite:///:memory:
+      DB_USER: postgres
+      DB_PASSWORD: ""
+      DB_NAME: ""
+      DB_PORT: 0
+      API_KEY: ${{ secrets.API_KEY }}
+      SALT: ${{ secrets.SALT }}
+
     steps:
       # 1. Checkout the Repository
       - name: Check out the code
@@ -48,7 +57,7 @@ jobs:
       # 6. Start FastAPI Server
       - name: Start FastAPI server
         run: |
-          nohup uvicorn main:app --host 0.0.0.0 --port 8000 &
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 > server.log 2>&1 &
           echo "FastAPI server started"
 
       # 7. Wait for FastAPI Server to be Ready
@@ -62,18 +71,7 @@ jobs:
           done
           nc -z localhost 8000
 
-      # 8. Configure Environment Variables to Avoid Database Usage
-      - name: Set environment variables for testing without database
-        run: |
-          echo "DB_HOST=sqlite:///:memory:" >> $GITHUB_ENV
-          echo "DB_USER=postgres" >> $GITHUB_ENV  # Set to a default valid integer
-          echo "DB_PASSWORD=" >> $GITHUB_ENV
-          echo "DB_NAME=" >> $GITHUB_ENV
-          echo "DB_PORT=0" >> $GITHUB_ENV  # Set to a valid integer to avoid ValidationError
-          echo "API_KEY=${{ secrets.API_KEY }}" >> $GITHUB_ENV
-          echo "SALT=${{ secrets.SALT }}" >> $GITHUB_ENV
-
-      # 9. Run Tests with Pytest and Enforce Coverage
+      # 8. Run Tests with Pytest and Enforce Coverage
       - name: Run tests with pytest and enforce 50% coverage
         run: |
           pytest --cov=app --cov-fail-under=50 --cov-report=xml --cov-report=term-missing
