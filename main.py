@@ -237,9 +237,9 @@ async def divide_route(operation: OperationRequest):
     """
     Divide two numbers.
     """
+    if operation.b == 0:
+        raise HTTPException(status_code=400, detail="Cannot divide by zero!")  # Correct error message.
     try:
-        if operation.b == 0:
-            raise ValueError("Cannot divide by zero!")  # Correct error message.
         prompt = gen_division_prompt(operation.a, operation.b)
         function_name, args = call_groq_function(prompt)
         if function_name and args:

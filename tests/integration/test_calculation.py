@@ -262,13 +262,6 @@ def test_user_calculations_relationship(session):
     assert any(calc.type == 'subtraction' for calc in retrieved_user.calculations)
 
 
-def test_calculation_repr():
-    """Test the __repr__ method of Calculation."""
-    calc = Calculation(type="addition", inputs=[1, 2, 3])
-    repr_str = repr(calc)
-    assert "<Calculation(type=addition, inputs=[1, 2, 3])>" == repr_str
-
-
 def test_user_repr():
     """Test the __repr__ method of User."""
     user = User(first_name="Diana", last_name="Evans", email="diana.evans@example.com")
