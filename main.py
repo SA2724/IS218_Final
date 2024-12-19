@@ -183,6 +183,7 @@ async def add_route(operation: OperationRequest):
     Add two numbers.
     """
     try:
+        logger.debug(f"Request Payload: a={operation.a}, b={operation.b}")
         prompt = gen_add_prompt(operation.a, operation.b)
         function_name, args = call_groq_function(prompt)
         if function_name and args:
@@ -237,14 +238,14 @@ async def divide_route(operation: OperationRequest):
     Divide two numbers.
     """
     try:
+        if operation.b == 0:
+            raise ValueError("Cannot divide by zero!")  # Correct error message.
         prompt = gen_division_prompt(operation.a, operation.b)
         function_name, args = call_groq_function(prompt)
         if function_name and args:
-            if args["b"] == 0:
-                raise ValueError("Cannot divide by zero!")
             result = divide(args["a"], args["b"])
         else:
-            logger.error("Divide Operation Error: Failed to call external API.")
+            logger.error("Failed to call external API for division.")
             raise HTTPException(status_code=400, detail="Failed to call external API for division.")
         return OperationResponse(result=result)
     except ValueError as e:
@@ -253,6 +254,8 @@ async def divide_route(operation: OperationRequest):
     except Exception as e:
         logger.error(f"Divide Operation Internal Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
 
 @app.post("/modulus", response_model=OperationResponse, responses={400: {"model": ErrorResponse}})
 async def modulus_route(operation: OperationRequest):
