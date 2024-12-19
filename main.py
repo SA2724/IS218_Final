@@ -17,7 +17,7 @@ import os
 load_dotenv()
 
 # API Endpoint and API Key
-API_ENDPOINT = ""https://api.groq.com/openai/v1""
+API_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 API_KEY = os.getenv("API_KEY")
 
 # Setup logging
