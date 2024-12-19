@@ -243,9 +243,11 @@ async def divide_route(operation: OperationRequest):
         prompt = gen_division_prompt(operation.a, operation.b)
         function_name, args = call_groq_function(prompt)
         if function_name and args:
+            if args["b"] == 0:
+                raise ValueError("Cannot divide by zero!")
             result = divide(args["a"], args["b"])
         else:
-            logger.error("Failed to call external API for division.")
+            logger.error("Divide Operation Error: Failed to call external API.")
             raise HTTPException(status_code=400, detail="Failed to call external API for division.")
         return OperationResponse(result=result)
     except ValueError as e:
